@@ -54,8 +54,8 @@ class PizzaBoy:
     @staticmethod
     def remove_code_from_basket():
         timestamp = str(calendar.timegm(time.gmtime())) + '00'
-        for orderitem in range(1, 6):
-            removeurl = '{0}RemoveVoucher?orderItemId={1}&timestamp={2}{3}'.format(basket, str(orderitem), timestamp, str(orderitem))
+        for orderitem in range(0, 5):
+            removeurl = '{0}RemoveVoucher?orderItemId={1}&timestamp={2}{3}'.format(basket, str(6-orderitem), timestamp, str(orderitem))
             requests.post(removeurl, cookies=cookies)
 
     @staticmethod
