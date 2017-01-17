@@ -47,8 +47,7 @@ class PizzaBoy:
     @staticmethod
     def get_discount_from_basket():
         r = requests.get(checkurl, cookies=cookies)
-        text = requests.utils.get_unicode_from_response(r)
-        parsed = html.fromstring(text)
+        parsed = html.fromstring(r.text)
         description = parsed.find_class('description')
         return description[0].text_content()
 
