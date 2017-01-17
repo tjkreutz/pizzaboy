@@ -53,9 +53,10 @@ class PizzaBoy:
 
     @staticmethod
     def remove_code_from_basket():
-        timestamp = str(calendar.timegm(time.gmtime())) + '000'
-        removeurl = basket + "RemoveVoucher?orderItemId=1&timestamp=" + timestamp
-        requests.post(removeurl, cookies=cookies)
+        timestamp = str(calendar.timegm(time.gmtime())) + '00'
+        for orderitem in range(1, 6):
+            removeurl = '{0}RemoveVoucher?orderItemId={1}&timestamp={2}{3}'.format(basket, str(orderitem), timestamp, str(orderitem))
+            requests.post(removeurl, cookies=cookies)
 
     @staticmethod
     def go_to_sleep(seconds):
