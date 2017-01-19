@@ -21,7 +21,7 @@ class PizzaBoy:
 
     def run(self):
         print("Checking codes")
-        for code in range(0, 99999):
+        for code in range(45739, 99999):
             code = self.adapt_code(code) if code < 10000 else str(code)
             self.try_code(code)
 
@@ -54,9 +54,10 @@ class PizzaBoy:
     @staticmethod
     def remove_code_from_basket():
         timestamp = str(calendar.timegm(time.gmtime())) + '00'
-        for orderitem in range(0, 5):
-            removeurl = '{0}RemoveVoucher?orderItemId={1}&timestamp={2}{3}'.format(basket, str(6-orderitem), timestamp, str(orderitem))
+        for orderitem in range(4):
+            removeurl = '{0}RemoveVoucher?orderItemId=1&timestamp={1}{2}'.format(basket, timestamp, str(orderitem))
             requests.post(removeurl, cookies=cookies)
+            time.sleep(2)
 
     @staticmethod
     def go_to_sleep(seconds):
